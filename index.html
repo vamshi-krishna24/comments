@@ -1,0 +1,2669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WordFlow – Read &amp; Write</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;700&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    /* ===== RESET ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    button { cursor: pointer; font-family: inherit; }
+    input, textarea, select { font-family: inherit; }
+    a { text-decoration: none; color: inherit; }
+    img { display: block; max-width: 100%; }
+
+    /* ===== THEME ===== */
+    :root {
+      --color-primary: #1a6b4a;
+      --color-primary-hover: #155a3d;
+      --color-primary-light: #e8f4ef;
+      --color-secondary: #f59e2d;
+      --color-bg: #f7f6f3;
+      --color-bg-card: #ffffff;
+      --color-bg-sidebar: #f0ede8;
+      --color-text: #1c1c1e;
+      --color-text-muted: #6b6b6b;
+      --color-text-light: #9a9a9a;
+      --color-text-inverse: #ffffff;
+      --color-border: #e2ddd8;
+      --color-error: #d32f2f;
+      --color-error-light: #fdecea;
+      --color-badge-draft: #ede8fe;
+      --color-badge-draft-text: #5b21b6;
+      --color-badge-published: #d1fae5;
+      --color-badge-published-text: #065f46;
+      --family-display: 'Lora', Georgia, serif;
+      --family-body: 'Source Sans 3', system-ui, sans-serif;
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --radius-full: 9999px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+      --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+      --navbar-height: 64px;
+      --max-width: 1200px;
+      --max-content: 720px;
+    }
+
+    /* ===== GLOBAL ===== */
+    body {
+      font-family: var(--family-body);
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-size: 1rem;
+      min-height: 100vh;
+    }
+    h1,h2,h3,h4,h5,h6 { font-family: var(--family-display); font-weight: 700; line-height: 1.25; }
+    a:hover { color: var(--color-primary); }
+
+    /* ===== NAVBAR ===== */
+    .navbar {
+      position: sticky; top: 0; z-index: 100;
+      height: var(--navbar-height);
+      background: var(--color-bg-card);
+      border-bottom: 1px solid var(--color-border);
+      box-shadow: var(--shadow-sm);
+    }
+    .navbar-inner {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 0 1.5rem;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+    .brand-icon {
+      width: 36px; height: 36px;
+      background: var(--color-primary);
+      color: var(--color-text-inverse);
+      border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--family-display);
+      font-weight: 700; font-size: 1.125rem;
+    }
+    .brand-name {
+      font-family: var(--family-display);
+      font-weight: 700;
+      font-size: 1.25rem;
+      color: var(--color-text);
+    }
+    .navbar-search {
+      flex: 1;
+      max-width: 360px;
+      position: relative;
+      margin: 0 1rem;
+    }
+    .navbar-search input {
+      width: 100%;
+      padding: 0.5rem 0.75rem 0.5rem 2.25rem;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-full);
+      background: var(--color-bg);
+      font-size: 0.875rem;
+      color: var(--color-text);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .navbar-search input:focus { border-color: var(--color-primary); }
+    .navbar-search svg {
+      position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%);
+      color: var(--color-text-muted);
+      pointer-events: none;
+    }
+    .navbar-actions {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .btn-primary {
+      display: flex; align-items: center; gap: 0.35rem;
+      background: var(--color-primary);
+      color: var(--color-text-inverse);
+      border: none;
+      padding: 0.45rem 1rem;
+      border-radius: var(--radius-full);
+      font-size: 0.875rem;
+      font-weight: 600;
+      transition: background 0.15s;
+      cursor: pointer;
+    }
+    .btn-primary:hover { background: var(--color-primary-hover); color: var(--color-text-inverse); }
+    .btn-outline {
+      display: flex; align-items: center; gap: 0.35rem;
+      background: transparent;
+      color: var(--color-text);
+      border: 1px solid var(--color-border);
+      padding: 0.45rem 1rem;
+      border-radius: var(--radius-full);
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.15s;
+      cursor: pointer;
+    }
+    .btn-outline:hover { border-color: var(--color-primary); color: var(--color-primary); }
+    .icon-btn {
+      background: transparent;
+      border: none;
+      color: var(--color-text-muted);
+      width: 36px; height: 36px;
+      border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s, color 0.15s;
+    }
+    .icon-btn:hover { background: var(--color-bg); color: var(--color-primary); }
+    .avatar-chip {
+      width: 36px; height: 36px;
+      border-radius: var(--radius-full);
+      background: var(--color-primary);
+      color: var(--color-text-inverse);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      cursor: default;
+      overflow: hidden;
+    }
+    .avatar-chip img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* ===== PAGES ===== */
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* ===== HOME PAGE ===== */
+    .hero {
+      background: var(--color-primary-light);
+      padding: 2rem 1.5rem;
+    }
+    .hero-inner {
+      max-width: var(--max-width);
+      margin: 0 auto;
+    }
+    .hero-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--color-primary);
+      margin-bottom: 0.75rem;
+    }
+    .content-area {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+      display: grid;
+      grid-template-columns: 1fr 280px;
+      gap: 2.5rem;
+    }
+    @media (max-width: 768px) {
+      .content-area { grid-template-columns: 1fr; }
+    }
+    .feed-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+    }
+    .feed-title { font-size: 1.5rem; color: var(--color-text); }
+    .feed-count { font-size: 0.875rem; color: var(--color-text-muted); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+    .empty-state {
+      text-align: center;
+      color: var(--color-text-muted);
+      padding: 3rem;
+    }
+
+    /* ===== POST CARD ===== */
+    .card {
+      background: var(--color-bg-card);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--color-border);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: box-shadow 0.2s, transform 0.2s;
+      cursor: pointer;
+    }
+    .card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+    .card.featured { flex-direction: row; max-height: 340px; }
+    .card-image {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+    .card.featured .card-image { width: 50%; height: auto; object-fit: cover; }
+    .card-body { padding: 1.25rem; display: flex; flex-direction: column; gap: 0.5rem; flex: 1; }
+    .card-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.75rem;
+      color: var(--color-text-muted);
+    }
+    .card-category {
+      background: var(--color-primary-light);
+      color: var(--color-primary);
+      padding: 0.15rem 0.5rem;
+      border-radius: var(--radius-full);
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+    .card-title {
+      font-family: var(--family-display);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--color-text);
+      line-height: 1.3;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .card.featured .card-title { font-size: 1.5rem; }
+    .card-excerpt {
+      font-size: 0.875rem;
+      color: var(--color-text-muted);
+      line-height: 1.6;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      flex: 1;
+    }
+    .card-footer {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-top: 0.5rem;
+    }
+    .card-avatar {
+      width: 28px; height: 28px;
+      border-radius: var(--radius-full);
+      background: var(--color-primary);
+      color: var(--color-text-inverse);
+      font-size: 0.65rem;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .card-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .card-author-name { font-size: 0.8rem; font-weight: 600; }
+    .card-date { font-size: 0.75rem; color: var(--color-text-muted); }
+
+    /* ===== SIDEBAR ===== */
+    .sidebar { display: flex; flex-direction: column; gap: 1.5rem; }
+    .sidebar-section {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+    }
+    .sidebar-title {
+      font-size: 0.875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-text-muted);
+      margin-bottom: 0.75rem;
+    }
+    .category-list { display: flex; flex-direction: column; gap: 0.25rem; }
+    .category-btn {
+      text-align: left;
+      background: transparent;
+      border: none;
+      padding: 0.4rem 0.75rem;
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      color: var(--color-text-muted);
+      transition: all 0.15s;
+      cursor: pointer;
+    }
+    .category-btn:hover { background: var(--color-primary-light); color: var(--color-primary); }
+    .category-btn.active { background: var(--color-primary-light); color: var(--color-primary); font-weight: 600; }
+    .sidebar-text { font-size: 0.875rem; color: var(--color-text-muted); line-height: 1.6; }
+
+    /* ===== POST DETAIL PAGE ===== */
+    .post-detail-page { padding: 2rem 1.5rem; }
+    .post-detail-inner {
+      max-width: var(--max-content);
+      margin: 0 auto;
+    }
+    .back-link {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      font-size: 0.875rem;
+      color: var(--color-text-muted);
+      margin-bottom: 1.5rem;
+      transition: color 0.15s;
+      cursor: pointer;
+    }
+    .back-link:hover { color: var(--color-primary); }
+    .article-header { margin-bottom: 1.5rem; }
+    .article-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--color-text-muted);
+      margin-bottom: 0.75rem;
+    }
+    .article-category {
+      background: var(--color-primary-light);
+      color: var(--color-primary);
+      padding: 0.15rem 0.6rem;
+      border-radius: var(--radius-full);
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: capitalize;
+    }
+    .article-title {
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      line-height: 1.2;
+      margin-bottom: 0.75rem;
+    }
+    .article-excerpt {
+      font-size: 1.125rem;
+      color: var(--color-text-muted);
+      line-height: 1.7;
+    }
+    .article-featured-image {
+      width: 100%; border-radius: var(--radius-lg);
+      max-height: 420px; object-fit: cover;
+      margin: 1.5rem 0;
+    }
+    .article-body { line-height: 1.8; font-size: 1.05rem; }
+    .article-body h2 { font-size: 1.375rem; margin: 2rem 0 0.75rem; }
+    .article-body p { margin-bottom: 1rem; }
+    .author-bio {
+      display: flex; gap: 1rem;
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      margin: 2rem 0;
+    }
+    .author-bio-avatar {
+      width: 52px; height: 52px; flex-shrink: 0;
+      border-radius: var(--radius-full);
+      background: var(--color-primary);
+      color: var(--color-text-inverse);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 1rem;
+      overflow: hidden;
+    }
+    .author-bio-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .author-bio-label { font-size: 0.75rem; color: var(--color-text-muted); }
+    .author-bio-name { font-weight: 700; font-size: 1rem; display: block; }
+    .author-bio-text { font-size: 0.875rem; color: var(--color-text-muted); margin: 0.3rem 0; }
+    .author-bio-joined { font-size: 0.75rem; color: var(--color-text-light); }
+
+    /* ===== COMMENTS ===== */
+    .comments-section { margin-top: 2rem; }
+    .comments-title { font-size: 1.375rem; margin-bottom: 1.25rem; }
+    .login-prompt {
+      background: var(--color-bg);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      font-size: 0.875rem;
+      color: var(--color-text-muted);
+      margin-bottom: 1.5rem;
+    }
+    .login-prompt a { color: var(--color-primary); font-weight: 600; cursor: pointer; }
+    .comment-input {
+      display: flex; gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .comment-input-avatar {
+      width: 36px; height: 36px; flex-shrink: 0;
+      border-radius: var(--radius-full);
+      background: var(--color-primary);
+      color: var(--color-text-inverse);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 700;
+      overflow: hidden;
+    }
+    .comment-input-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .comment-input-body { flex: 1; }
+    .comment-textarea {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      resize: vertical;
+      min-height: 80px;
+      outline: none;
+      transition: border-color 0.2s;
+      background: var(--color-bg-card);
+      color: var(--color-text);
+    }
+    .comment-textarea:focus { border-color: var(--color-primary); }
+    .comment-submit {
+      margin-top: 0.5rem;
+      display: flex; justify-content: flex-end;
+    }
+    .comment-list { display: flex; flex-direction: column; gap: 1.25rem; }
+    .comment {
+      display: flex; gap: 0.75rem;
+    }
+    .comment-avatar {
+      width: 36px; height: 36px; flex-shrink: 0;
+      border-radius: var(--radius-full);
+      background: var(--color-bg-sidebar);
+      color: var(--color-primary);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 700;
+      overflow: hidden;
+    }
+    .comment-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .comment-body { flex: 1; }
+    .comment-header {
+      display: flex; align-items: baseline; gap: 0.5rem;
+      margin-bottom: 0.25rem;
+    }
+    .comment-author { font-weight: 700; font-size: 0.9rem; }
+    .comment-time { font-size: 0.75rem; color: var(--color-text-muted); }
+    .comment-text { font-size: 0.875rem; line-height: 1.6; }
+    .no-comments { color: var(--color-text-muted); font-size: 0.875rem; }
+
+    /* ===== AUTH PAGE ===== */
+    .auth-page {
+      min-height: calc(100vh - var(--navbar-height));
+      display: flex; align-items: center; justify-content: center;
+      padding: 2rem 1.5rem;
+    }
+    .auth-card {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: var(--shadow-lg);
+    }
+    .auth-brand {
+      display: flex; align-items: center; gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .auth-title { font-size: 1.5rem; margin-bottom: 0.25rem; }
+    .auth-subtitle { font-size: 0.875rem; color: var(--color-text-muted); margin-bottom: 1.5rem; }
+    .auth-tabs { display: flex; border-bottom: 2px solid var(--color-border); margin-bottom: 1.25rem; }
+    .auth-tab {
+      flex: 1; background: transparent; border: none;
+      padding: 0.6rem; font-size: 0.9rem; font-weight: 600;
+      color: var(--color-text-muted);
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: all 0.15s;
+      cursor: pointer;
+    }
+    .auth-tab.active { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+    .form-field { margin-bottom: 1rem; }
+    .form-label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.35rem; }
+    .form-input {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      outline: none;
+      transition: border-color 0.2s;
+      background: var(--color-bg);
+      color: var(--color-text);
+    }
+    .form-input:focus { border-color: var(--color-primary); }
+    .error-banner {
+      background: var(--color-error-light);
+      color: var(--color-error);
+      border: 1px solid #f5c6c6;
+      border-radius: var(--radius-md);
+      padding: 0.6rem 0.75rem;
+      font-size: 0.875rem;
+      margin-bottom: 1rem;
+    }
+    .success-banner {
+      background: var(--color-badge-published);
+      color: var(--color-badge-published-text);
+      border: 1px solid #6ee7b7;
+      border-radius: var(--radius-md);
+      padding: 0.6rem 0.75rem;
+      font-size: 0.875rem;
+      margin-bottom: 1rem;
+    }
+    .demo-hint {
+      margin-top: 1.25rem;
+      padding: 0.75rem;
+      background: var(--color-bg);
+      border-radius: var(--radius-md);
+      font-size: 0.8rem;
+      color: var(--color-text-muted);
+    }
+    .demo-hint code {
+      background: var(--color-border);
+      padding: 0.1rem 0.3rem;
+      border-radius: var(--radius-sm);
+      font-family: monospace;
+    }
+
+    /* ===== EDITOR PAGE ===== */
+    .editor-page { display: flex; flex-direction: column; min-height: calc(100vh - var(--navbar-height)); }
+    .editor-toolbar {
+      background: var(--color-bg-card);
+      border-bottom: 1px solid var(--color-border);
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .toolbar-label { font-size: 0.875rem; color: var(--color-text-muted); font-weight: 600; }
+    .toolbar-actions { display: flex; align-items: center; gap: 0.5rem; }
+    .toolbar-btn {
+      display: flex; align-items: center; gap: 0.35rem;
+      background: transparent;
+      border: 1px solid var(--color-border);
+      padding: 0.4rem 0.75rem;
+      border-radius: var(--radius-md);
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--color-text);
+      transition: all 0.15s;
+      cursor: pointer;
+    }
+    .toolbar-btn:hover { border-color: var(--color-primary); color: var(--color-primary); }
+    .toolbar-btn.active { background: var(--color-primary-light); color: var(--color-primary); border-color: var(--color-primary); }
+    .toolbar-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .publish-btn {
+      background: var(--color-primary);
+      color: var(--color-text-inverse);
+      border: none;
+      padding: 0.4rem 1rem;
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .publish-btn:hover { background: var(--color-primary-hover); }
+    .publish-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .editor-body { flex: 1; padding: 1.5rem; }
+    .editor-pane {
+      max-width: 780px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .editor-title-input {
+      width: 100%;
+      font-family: var(--family-display);
+      font-size: 2rem;
+      font-weight: 700;
+      border: none;
+      outline: none;
+      background: transparent;
+      color: var(--color-text);
+      border-bottom: 2px solid var(--color-border);
+      padding-bottom: 0.5rem;
+    }
+    .editor-title-input::placeholder { color: var(--color-text-light); }
+    .editor-meta-row { display: flex; gap: 1rem; flex-wrap: wrap; }
+    .editor-field { display: flex; flex-direction: column; gap: 0.3rem; }
+    .editor-field.grow { flex: 1; }
+    .editor-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted); }
+    .editor-input {
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      outline: none;
+      transition: border-color 0.2s;
+      background: var(--color-bg-card);
+      color: var(--color-text);
+    }
+    .editor-input:focus { border-color: var(--color-primary); }
+    .editor-select {
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      outline: none;
+      background: var(--color-bg-card);
+      color: var(--color-text);
+    }
+    .formatting-bar { display: flex; gap: 0.25rem; }
+    .fmt-btn {
+      width: 32px; height: 32px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      background: var(--color-bg-card);
+      font-size: 0.875rem;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--color-text-muted);
+      transition: all 0.15s;
+      cursor: pointer;
+    }
+    .fmt-btn:hover { border-color: var(--color-primary); color: var(--color-primary); }
+    .editor-content-area {
+      width: 100%;
+      min-height: 400px;
+      padding: 0.75rem;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      font-size: 1rem;
+      line-height: 1.8;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s;
+      background: var(--color-bg-card);
+      color: var(--color-text);
+      font-family: var(--family-body);
+    }
+    .editor-content-area:focus { border-color: var(--color-primary); }
+    .preview-pane {
+      max-width: 780px;
+      margin: 0 auto;
+    }
+    .preview-image {
+      width: 100%; border-radius: var(--radius-lg);
+      max-height: 380px; object-fit: cover;
+      margin-bottom: 1.5rem;
+    }
+    .preview-title { font-size: 2rem; margin-bottom: 1rem; }
+    .preview-body { line-height: 1.8; font-size: 1.05rem; }
+    .preview-body h2 { font-size: 1.375rem; margin: 1.5rem 0 0.75rem; }
+    .preview-body p { margin-bottom: 0.75rem; }
+    .auth-wall {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: calc(100vh - var(--navbar-height));
+      gap: 1rem;
+    }
+
+    /* ===== DASHBOARD PAGE ===== */
+    .dashboard-page { padding: 2rem 1.5rem; }
+    .dashboard-inner { max-width: var(--max-width); margin: 0 auto; }
+    .dashboard-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .dashboard-title { font-size: 1.75rem; }
+    .dashboard-subtitle { font-size: 0.875rem; color: var(--color-text-muted); }
+    .tabs {
+      display: flex;
+      border-bottom: 2px solid var(--color-border);
+      margin-bottom: 1.5rem;
+      gap: 0;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      padding: 0.6rem 1rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--color-text-muted);
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: all 0.15s;
+      cursor: pointer;
+      display: flex; align-items: center; gap: 0.35rem;
+    }
+    .tab-btn.active { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+    .post-list { display: flex; flex-direction: column; gap: 0; }
+    .post-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 0;
+      border-bottom: 1px solid var(--color-border);
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .post-row-info { display: flex; flex-direction: column; gap: 0.25rem; }
+    .post-row-meta { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem; }
+    .status-badge {
+      font-size: 0.7rem; font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: var(--radius-full);
+      text-transform: uppercase;
+    }
+    .status-published { background: var(--color-badge-published); color: var(--color-badge-published-text); }
+    .status-draft { background: var(--color-badge-draft); color: var(--color-badge-draft-text); }
+    .post-row-category { font-size: 0.75rem; color: var(--color-text-muted); text-transform: capitalize; }
+    .post-row-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+    .post-row-title:hover { color: var(--color-primary); }
+    .post-row-date { font-size: 0.75rem; color: var(--color-text-muted); }
+    .post-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+    .action-btn {
+      display: flex; align-items: center; gap: 0.3rem;
+      background: transparent;
+      border: 1px solid var(--color-border);
+      padding: 0.35rem 0.65rem;
+      border-radius: var(--radius-md);
+      font-size: 0.8rem;
+      color: var(--color-text-muted);
+      transition: all 0.15s;
+      cursor: pointer;
+    }
+    .action-btn:hover { border-color: var(--color-primary); color: var(--color-primary); }
+    .action-btn.danger { border-color: var(--color-error); color: var(--color-error); }
+
+    /* ===== SETTINGS CARD ===== */
+    .settings-card {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      max-width: 560px;
+    }
+    .settings-title { font-size: 1.25rem; margin-bottom: 1.25rem; }
+    .avatar-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+    .big-avatar {
+      width: 72px; height: 72px;
+      border-radius: var(--radius-full);
+      background: var(--color-primary);
+      color: var(--color-text-inverse);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; font-weight: 700;
+      flex-shrink: 0;
+      overflow: hidden;
+      position: relative;
+    }
+    .big-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .avatar-controls { display: flex; flex-direction: column; gap: 0.4rem; }
+    .avatar-upload-btn {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      background: var(--color-primary);
+      color: var(--color-text-inverse);
+      border: none;
+      padding: 0.4rem 0.85rem;
+      border-radius: var(--radius-md);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .avatar-upload-btn:hover { background: var(--color-primary-hover); }
+    .avatar-remove-btn {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      background: transparent;
+      color: var(--color-error);
+      border: 1px solid var(--color-error);
+      padding: 0.4rem 0.85rem;
+      border-radius: var(--radius-md);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .avatar-remove-btn:hover { background: var(--color-error-light); }
+    .settings-username { font-weight: 700; font-size: 1rem; }
+    .settings-email, .settings-member { font-size: 0.8rem; color: var(--color-text-muted); }
+    .settings-actions { display: flex; gap: 0.75rem; margin-top: 1.25rem; flex-wrap: wrap; }
+    .save-btn {
+      background: var(--color-primary);
+      color: var(--color-text-inverse);
+      border: none;
+      padding: 0.5rem 1.25rem;
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .save-btn:hover { background: var(--color-primary-hover); }
+    .logout-btn {
+      background: transparent;
+      border: 1px solid var(--color-border);
+      color: var(--color-text-muted);
+      padding: 0.5rem 1.25rem;
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .logout-btn:hover { border-color: var(--color-error); color: var(--color-error); }
+    .delete-account-btn {
+      background: transparent;
+      border: 1px solid var(--color-error);
+      color: var(--color-error);
+      padding: 0.5rem 1.25rem;
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-top: 0.5rem;
+    }
+    .delete-account-btn:hover { background: var(--color-error-light); }
+    .danger-zone {
+      margin-top: 2rem;
+      border-top: 1px solid var(--color-border);
+      padding-top: 1.5rem;
+    }
+    .danger-zone-title {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--color-error);
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .danger-zone-text {
+      font-size: 0.8rem;
+      color: var(--color-text-muted);
+      margin-bottom: 0.75rem;
+    }
+
+    /* ===== ADMIN PANEL ===== */
+    .admin-panel { padding: 2rem 1.5rem; }
+    .admin-inner { max-width: var(--max-width); margin: 0 auto; }
+    .admin-badge {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      background: #fef3c7; color: #92400e;
+      border: 1px solid #fde68a;
+      padding: 0.15rem 0.6rem;
+      border-radius: var(--radius-full);
+      font-size: 0.7rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      display: flex; flex-direction: column; gap: 0.35rem;
+    }
+    .stat-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted); }
+    .stat-value { font-size: 2rem; font-weight: 700; font-family: var(--family-display); color: var(--color-text); }
+    .stat-sub { font-size: 0.8rem; color: var(--color-text-muted); }
+    .admin-section {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+    }
+    .admin-section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--color-border);
+      background: var(--color-bg);
+    }
+    .admin-section-title { font-size: 1rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; }
+    .admin-search {
+      padding: 0.4rem 0.75rem;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-full);
+      font-size: 0.8rem;
+      outline: none;
+      background: var(--color-bg-card);
+      color: var(--color-text);
+      width: 200px;
+    }
+    .admin-search:focus { border-color: var(--color-primary); }
+    .admin-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .admin-table th {
+      text-align: left;
+      padding: 0.6rem 1rem;
+      background: var(--color-bg);
+      color: var(--color-text-muted);
+      font-size: 0.72rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .admin-table td {
+      padding: 0.7rem 1rem;
+      border-bottom: 1px solid var(--color-border);
+      vertical-align: middle;
+    }
+    .admin-table tr:last-child td { border-bottom: none; }
+    .admin-table tr:hover td { background: var(--color-bg); }
+    .admin-actions { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; }
+    .admin-btn {
+      display: inline-flex; align-items: center; gap: 0.25rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem; font-weight: 600;
+      border: 1px solid var(--color-border);
+      background: transparent;
+      color: var(--color-text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .admin-btn:hover { border-color: var(--color-primary); color: var(--color-primary); }
+    .admin-btn.danger { color: var(--color-error); border-color: var(--color-error); }
+    .admin-btn.danger:hover { background: var(--color-error-light); }
+    .admin-btn.confirm { background: var(--color-error); color: #fff; border-color: var(--color-error); }
+    .admin-btn.success { color: var(--color-badge-published-text); border-color: var(--color-badge-published-text); }
+    .admin-btn.success:hover { background: var(--color-badge-published); }
+    .no-access {
+      text-align: center; padding: 4rem 2rem;
+    }
+    .no-access h2 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+    .no-access p { color: var(--color-text-muted); font-size: 0.9rem; }
+
+    /* ===== USERS DB MODAL ===== */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 200;
+      display: flex; align-items: center; justify-content: center;
+      padding: 1.5rem;
+    }
+    .modal {
+      background: var(--color-bg-card);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      padding: 2rem;
+      width: 100%;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 1.25rem;
+    }
+    .modal-title { font-size: 1.25rem; }
+    .modal-close {
+      background: transparent;
+      border: none;
+      color: var(--color-text-muted);
+      font-size: 1.5rem;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0.25rem;
+    }
+    .db-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .db-table th {
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      background: var(--color-bg);
+      color: var(--color-text-muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 2px solid var(--color-border);
+    }
+    .db-table td {
+      padding: 0.6rem 0.75rem;
+      border-bottom: 1px solid var(--color-border);
+      vertical-align: middle;
+    }
+    .db-table tr:last-child td { border-bottom: none; }
+    .db-avatar-sm {
+      width: 28px; height: 28px;
+      border-radius: var(--radius-full);
+      background: var(--color-primary);
+      color: var(--color-text-inverse);
+      font-size: 0.65rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden; flex-shrink: 0;
+    }
+    .db-avatar-sm img { width: 100%; height: 100%; object-fit: cover; }
+    .db-user-row { display: flex; align-items: center; gap: 0.5rem; }
+    .db-badge {
+      font-size: 0.65rem; font-weight: 700;
+      padding: 0.1rem 0.4rem;
+      border-radius: var(--radius-full);
+    }
+    .db-badge-demo { background: #fef3c7; color: #92400e; }
+    .db-badge-user { background: var(--color-primary-light); color: var(--color-primary); }
+    .modal-footer { margin-top: 1.25rem; display: flex; justify-content: flex-end; }
+
+    .admin-role-badge {
+      font-size: 0.65rem; font-weight: 700;
+      padding: 0.1rem 0.4rem;
+      border-radius: var(--radius-full);
+      background: #fef3c7; color: #92400e;
+      display: inline-block;
+    }
+    /* ===== MISC ===== */
+    .meta-divider { color: var(--color-border); }
+    .form-textarea {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      outline: none;
+      transition: border-color 0.2s;
+      background: var(--color-bg);
+      color: var(--color-text);
+      resize: vertical;
+    }
+    .form-textarea:focus { border-color: var(--color-primary); }
+    .empty-dashboard {
+      text-align: center;
+      padding: 3rem;
+      color: var(--color-text-muted);
+    }
+    .empty-action {
+      display: inline-block;
+      margin-top: 0.75rem;
+      background: var(--color-primary);
+      color: var(--color-text-inverse);
+      padding: 0.5rem 1.25rem;
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: background 0.15s;
+    }
+    .empty-action:hover { background: var(--color-primary-hover); }
+    /* hidden file input for avatar upload */
+    #avatarFileInput { display: none; }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<header class="navbar">
+  <div class="navbar-inner">
+    <a class="brand" onclick="navigate('home')" href="#">
+      <div class="brand-icon">W</div>
+      <span class="brand-name">WordFlow</span>
+    </a>
+    <div class="navbar-search">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" id="searchInput" placeholder="Search posts..." oninput="handleSearch(this.value)" />
+    </div>
+    <div class="navbar-actions" id="navbarActions"></div>
+  </div>
+</header>
+
+<!-- HOME PAGE -->
+<div id="page-home" class="page active">
+  <div class="hero" id="hero-section"></div>
+  <div class="content-area">
+    <div class="feed">
+      <div class="feed-header">
+        <h2 class="feed-title" id="feedTitle">Latest Posts</h2>
+        <span class="feed-count" id="feedCount"></span>
+      </div>
+      <div class="grid" id="postGrid"></div>
+    </div>
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <h3 class="sidebar-title">Browse by Topic</h3>
+        <nav class="category-list" id="categoryList"></nav>
+      </div>
+      <div class="sidebar-section">
+        <h3 class="sidebar-title">About WordFlow</h3>
+        <p class="sidebar-text">A home for thoughtful writing. Discover essays, observations, and ideas from our community of independent authors.</p>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- POST DETAIL PAGE -->
+<div id="page-post" class="page">
+  <div class="post-detail-page">
+    <div class="post-detail-inner" id="postDetailContent"></div>
+  </div>
+</div>
+
+<!-- AUTH PAGE -->
+<div id="page-auth" class="page">
+  <div class="auth-page">
+    <div class="auth-card">
+      <div class="auth-brand">
+        <div class="brand-icon">W</div>
+        <span class="brand-name">WordFlow</span>
+      </div>
+      <h1 class="auth-title" id="authTitle">Welcome back</h1>
+      <p class="auth-subtitle" id="authSubtitle">Sign in to read, write, and engage with the community.</p>
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="loginTab" onclick="switchAuthMode('login')">Sign In</button>
+        <button class="auth-tab" id="signupTab" onclick="switchAuthMode('signup')">Sign Up</button>
+      </div>
+      <div id="authError"></div>
+      <form id="authForm" onsubmit="handleAuth(event)">
+        <div id="signupFields" style="display:none">
+          <div class="form-field">
+            <label class="form-label" for="displayName">Display Name</label>
+            <input class="form-input" id="displayName" type="text" placeholder="Your full name" />
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="username">Username</label>
+            <input class="form-input" id="usernameInput" type="text" placeholder="your_username" />
+          </div>
+        </div>
+        <div class="form-field">
+          <label class="form-label" for="authEmail">Email</label>
+          <input class="form-input" id="authEmail" type="email" placeholder="you@example.com" required />
+        </div>
+        <div class="form-field">
+          <label class="form-label" for="authPassword">Password</label>
+          <input class="form-input" id="authPassword" type="password" placeholder="Your password" required />
+        </div>
+        <button type="submit" class="btn-primary" style="width:100%; justify-content:center; padding:0.65rem;" id="authSubmitBtn">Sign In</button>
+      </form>
+      <div class="demo-hint" id="demoHint">
+        <strong>Demo accounts:</strong> elena@wordflow.com-ADMIN Id , daniel@wordflow.com-USER Id , or priya@wordflow.com-USER Id &mdash; password: <code>password</code>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EDITOR PAGE -->
+<div id="page-editor" class="page">
+  <div class="editor-page">
+    <div class="editor-toolbar">
+      <span class="toolbar-label" id="editorLabel">New post</span>
+      <div class="toolbar-actions">
+        <button class="toolbar-btn" id="previewToggleBtn" onclick="toggleEditorPreview()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+          Preview
+        </button>
+        <button class="toolbar-btn" id="saveDraftBtn" onclick="handleSaveDraft()" disabled>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
+          Save Draft
+        </button>
+        <button class="toolbar-btn" onclick="discardEditor()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          Discard
+        </button>
+        <button class="publish-btn" id="publishBtn" onclick="handlePublish()" disabled>Publish</button>
+      </div>
+    </div>
+    <div class="editor-body">
+      <div id="editorPane" class="editor-pane">
+        <input type="text" class="editor-title-input" id="editorTitle" placeholder="Your post title..." oninput="onEditorTitleChange()" />
+        <div class="editor-meta-row">
+          <div class="editor-field">
+            <label class="editor-label">Category</label>
+            <select class="editor-select" id="editorCategory"></select>
+          </div>
+          <div class="editor-field grow">
+            <label class="editor-label">Featured Image URL</label>
+            <input type="url" class="editor-input" id="editorImage" placeholder="https://..." />
+          </div>
+        </div>
+        <div class="editor-field">
+          <label class="editor-label">Excerpt (optional)</label>
+          <input type="text" class="editor-input" id="editorExcerpt" placeholder="A short description of your post..." />
+        </div>
+        <div class="formatting-bar">
+          <button class="fmt-btn" title="Bold" onclick="insertFormatting('**')"><strong>B</strong></button>
+          <button class="fmt-btn" title="Heading" onclick="insertBlock('##')">H2</button>
+          <button class="fmt-btn" title="List" onclick="insertBlock('-')">&#8226;</button>
+        </div>
+        <textarea class="editor-content-area" id="editorContent" placeholder="Start writing your post here...&#10;&#10;Use ## for headings." oninput="onEditorContentChange()"></textarea>
+      </div>
+      <div id="previewPane" class="preview-pane" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD PAGE -->
+<div id="page-dashboard" class="page">
+  <div class="dashboard-page">
+    <div class="dashboard-inner">
+      <div class="dashboard-header">
+        <div>
+          <h1 class="dashboard-title">Dashboard</h1>
+          <p class="dashboard-subtitle" id="dashboardSubtitle"></p>
+        </div>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;" id="dashboardHeaderBtns">
+          <button class="btn-outline" onclick="openUsersDb()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>
+            Users DB
+          </button>
+          <button class="btn-primary" onclick="navigate('editor')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+            New Post
+          </button>
+        </div>
+      </div>
+      <div class="tabs" id="dashTabs">
+        <button class="tab-btn active" id="tabPosts" onclick="switchDashTab('posts')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+          My Posts
+        </button>
+        <button class="tab-btn" id="tabSettings" onclick="switchDashTab('settings')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Account Settings
+        </button>
+        <button class="tab-btn" id="tabAdmin" onclick="navigate('admin')" style="display:none">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+          Admin Panel
+        </button>
+      </div>
+      <div id="dashPostsTab"></div>
+      <div id="dashSettingsTab" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN PANEL PAGE -->
+<div id="page-admin" class="page">
+  <div class="admin-panel">
+    <div class="admin-inner" id="adminPanelContent"></div>
+  </div>
+</div>
+
+<!-- USERS DB MODAL -->
+<div id="usersDbModal" class="modal-backdrop" style="display:none" onclick="closeUsersDbOnBackdrop(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title">Users Database</h2>
+      <button class="modal-close" onclick="closeUsersDb()">&times;</button>
+    </div>
+    <p style="font-size:0.8rem;color:var(--color-text-muted);margin-bottom:1rem;">All registered accounts stored in localStorage. Passwords are not stored in plain text for security.</p>
+    <div id="usersDbContent"></div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeUsersDb()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden file input for avatar -->
+<input type="file" id="avatarFileInput" accept="image/*" onchange="handleAvatarFile(event)" />
+
+<script>
+// ==================== DATA ====================
+const MOCK_USERS = [
+  { id: '1', username: 'elena_writes', displayName: 'Elena Marchetti', email: 'elena@wordflow.com', bio: 'Essayist and culture critic. Writing about art, cities, and slow living.', avatarInitials: 'EM', avatarUrl: null, joinedAt: '2023-01-15' },
+  { id: '2', username: 'daniel_k', displayName: 'Daniel Kowalski', email: 'daniel@wordflow.com', bio: 'Software engineer turned technical writer. Bridging the gap between code and communication.', avatarInitials: 'DK', avatarUrl: null, joinedAt: '2023-03-22' },
+  { id: '3', username: 'priya_sen', displayName: 'Priya Sen', email: 'priya@wordflow.com', bio: 'Poet, researcher, and amateur botanist. Fascinated by the natural world.', avatarInitials: 'PS', avatarUrl: null, joinedAt: '2023-06-10' },
+];
+
+const CATEGORIES = [
+  { id: 'all', name: 'All Posts', slug: 'all' },
+  { id: 'culture', name: 'Culture', slug: 'culture' },
+  { id: 'technology', name: 'Technology', slug: 'technology' },
+  { id: 'nature', name: 'Nature', slug: 'nature' },
+  { id: 'travel', name: 'Travel', slug: 'travel' },
+  { id: 'writing', name: 'Writing', slug: 'writing' },
+  { id: 'philosophy', name: 'Philosophy', slug: 'philosophy' },
+];
+
+// Demo credentials — password stored as simple hash for security (not plain text)
+// In a real app use bcrypt. Here we store a salted hash representation.
+const DEMO_CREDENTIALS = {
+  'elena@wordflow.com': { passwordHash: btoa('wf:password'), userId: '1' },
+  'daniel@wordflow.com': { passwordHash: btoa('wf:password'), userId: '2' },
+  'priya@wordflow.com': { passwordHash: btoa('wf:password'), userId: '3' },
+};
+
+function hashPassword(pw) { return btoa('wf:' + pw); }
+
+let posts = [
+  { id: '1', title: 'The Quiet Revolution of Slow Reading', excerpt: 'In a world optimized for speed and skimming, there is something quietly radical about sitting with a book for hours. Here is why I made the deliberate choice to slow down.', content: `## The Case Against Efficiency\n\nWe live in the age of the summary. Newsletters condense books into bullet points. Videos are watched at 1.5x speed. Even conversations are truncated into quick text exchanges. Yet something is lost in this relentless compression of experience.\n\nI rediscovered slow reading three years ago after a bout of burnout left me unable to focus on anything longer than a tweet. The irony was complete: a writer who could no longer read. The cure, it turned out, was deliberate practice—sitting with a single book for weeks rather than days.\n\n## What Slow Reading Teaches\n\nWhen you resist the urge to rush, you begin to notice things. A repeated metaphor across five chapters. The way an author's sentence length mirrors their anxiety. The precise moment a character changes, which you would have missed in haste.\n\nSlow reading is ultimately a form of deep listening. You give the text the silence it needs to speak.\n\n## A Simple Practice\n\nStart with twenty pages. Not chapters—pages. Read without highlighting. Allow your mind to wander occasionally and return. The act of returning is itself valuable. You are training attention, which may be the scarcest resource of our era.\n\nThe revolution will not be fast.`, author: MOCK_USERS[0], category: 'culture', featuredImage: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=1200&q=80', status: 'published', publishedAt: '2024-05-10T09:00:00Z', updatedAt: '2024-05-10T09:00:00Z', readTime: 4 },
+  { id: '2', title: 'Why Every Developer Should Learn to Write', excerpt: 'Writing is not just for writers. The discipline of clear prose is the same discipline required to write clean code. Here is what I learned crossing between both worlds.', content: `## Two Languages, One Skill\n\nI spent the first decade of my career convinced that writing was someone else's job. I wrote code. Other people wrote documentation, blog posts, and emails that actually got read.\n\nThen I switched roles—from engineer to technical writer—and discovered that the skills were the same. Clarity. Precision. Empathy for your audience. The willingness to revise.\n\n## Structure Is Everything\n\nGood code is readable code. A well-named function tells you what it does without requiring a comment. A well-structured paragraph does the same for an idea.\n\nWhen I began writing professionally, I applied the same instincts I used for refactoring: cut the redundant, clarify the ambiguous, test by reading aloud. It worked surprisingly well.\n\n## Where to Start\n\nKeep a work journal. Not a public blog—just a private log of what you built today, what confused you, and what you would do differently. After six months, you will have both improved your writing and generated material for real articles.\n\nThe best technical writers are not the best writers. They are the people who understand the technical work well enough to explain it simply.`, author: MOCK_USERS[1], category: 'technology', featuredImage: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=1200&q=80', status: 'published', publishedAt: '2024-05-08T14:30:00Z', updatedAt: '2024-05-08T14:30:00Z', readTime: 5 },
+  { id: '3', title: 'Field Notes from a City Garden', excerpt: 'A small plot in an urban neighborhood becomes a laboratory for observation. On learning to see what has always been there.', content: `## A Six-by-Eight-Foot World\n\nThe plot I rent from the community garden association is roughly the size of a large bathroom. In it I have managed to grow confusion, patience, and occasionally, vegetables.\n\nUrban gardening teaches you to attend to small things. The first true leaves of a seedling. The angle of morning light in late October. The precise shade of green that precedes flowering.\n\n## What the Soil Remembers\n\nCity soil carries history. My plot, I was told, was previously occupied by a retired teacher who grew only tomatoes for twenty years. I found three heirloom stakes buried beneath the surface in my first season. I kept them.\n\nThere is continuity in tending a plot that others have tended. You inherit not just the pH of the soil but something of their attention.\n\n## On Not Knowing\n\nMost experienced gardeners will tell you the same thing: you learn mostly by killing plants. I have killed many. I killed a rosemary that had survived three winters, through a combination of overwatering and excessive concern.\n\nThe garden does not forgive impatience, but it does reward return.`, author: MOCK_USERS[2], category: 'nature', featuredImage: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=1200&q=80', status: 'published', publishedAt: '2024-05-05T11:00:00Z', updatedAt: '2024-05-05T11:00:00Z', readTime: 4 },
+  { id: '4', title: 'Dispatches from a City I Did Not Expect to Love', excerpt: 'I arrived in Lisbon intending to stay two weeks. Eighteen months later, I am writing this from a café in Mouraria, trying to understand what happened.', content: `## The First Week\n\nLisbon resists first impressions. The hills are steeper than photographs suggest. The tiles are more uneven. The city demands that you walk it slowly, not because it is quaint—which it is, sometimes—but because the terrain literally prevents rushing.\n\nI arrived in October, which the locals consider off-season, though you would not know it from the light. The late afternoon light in Lisbon is operatic. It hits the terracotta rooftops and the river simultaneously, and everything turns briefly gold.\n\n## What Made Me Stay\n\nPartly the cost of living, which at the time was still manageable. Partly the quality of the bread. Mostly, I think, it was the pace.\n\nPortuguese cities move at a register I had forgotten existed. Lunch is an event, not a transaction. Conversations with shopkeepers go sideways into territory that has nothing to do with the transaction at hand.\n\n## On Long Stays\n\nThere is a particular kind of knowledge that only time gives you. You learn which bakery gets its delivery at 8 a.m. and is sold out by 9. You learn the names of the cats in the courtyard on your street.\n\nThis is not tourism. It is something closer to amateur citizenship.`, author: MOCK_USERS[0], category: 'travel', featuredImage: 'https://images.unsplash.com/photo-1555881400-74d7acaacd8b?w=1200&q=80', status: 'published', publishedAt: '2024-05-01T08:00:00Z', updatedAt: '2024-05-01T08:00:00Z', readTime: 6 },
+  { id: '5', title: 'On Writing the First Draft Badly', excerpt: 'Every experienced writer will tell you to lower your standards for the first draft. Here is why that advice is harder to follow than it sounds—and how I finally managed it.', content: `## The Perfectionism Trap\n\nMost writing blocks are not actually writer's block. They are perfectionism dressed in a more sympathetic costume. The internal editor shows up too early, before the material even exists, and begins critiquing a draft that hasn't been written yet.\n\nI spent two years working on an essay that I never finished because I kept revising the first paragraph. By the end, I had forty-seven versions of a single opening sentence and nothing else.\n\n## Permission to Be Bad\n\nThe phrase I have found most useful is: this draft exists only for me. No one will read this version. It cannot be shared. It is purely exploratory.\n\nThis is not a trick. It is a genuine reframing. A first draft is not a failed final draft; it is raw material. And raw material is allowed to be rough.\n\n## The Practice\n\nSet a timer. Write for twenty minutes without stopping. Do not delete. Do not re-read. If you cannot think of the right word, write "[word]" and continue. If the sentence feels wrong, write it anyway and write "[fix this]" after it.\n\nYou are not writing. You are excavating. The essay is already somewhere in there; you are just removing what is not it.`, author: MOCK_USERS[1], category: 'writing', featuredImage: 'https://images.unsplash.com/photo-1471107340929-a87cd0f5b5f3?w=1200&q=80', status: 'published', publishedAt: '2024-04-28T10:00:00Z', updatedAt: '2024-04-28T10:00:00Z', readTime: 5 },
+  { id: '6', title: 'The Paradox of Choice, Revisited', excerpt: 'Barry Schwartz argued that too many options make us miserable. Two decades later, the argument holds—but the solution may be simpler than we thought.', content: `## More Than Enough\n\nWhen Schwartz published "The Paradox of Choice" in 2004, online shopping was new, streaming did not exist, and the average supermarket stocked around 30,000 products. That number has more than doubled.\n\nThe argument was simple: beyond a certain threshold, additional options produce anxiety rather than satisfaction. Each new choice is also a new opportunity for regret.\n\n## Decision Fatigue Is Real\n\nResearch in cognitive science has repeatedly confirmed what Schwartz observed. Judges grant parole more often in the morning. Voters tend toward candidates listed first on ballots. Shoppers who have made many small decisions make worse decisions at the end of the day.\n\nWe treat willpower as if it were unlimited. It is not.\n\n## The Practical Response\n\nThe most effective people I know have quietly simplified their decision landscape. They have a small, trusted wardrobe. They rotate through a short list of meals. They have rules—not rigid ones, but heuristics—that reduce the cognitive cost of daily choices, freeing attention for the work that matters.\n\nSimplicity is not deprivation. It is optimization for the things you actually care about.`, author: MOCK_USERS[2], category: 'philosophy', featuredImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1200&q=80', status: 'published', publishedAt: '2024-04-22T13:00:00Z', updatedAt: '2024-04-22T13:00:00Z', readTime: 5 },
+];
+
+let comments = [
+  { id: '1', postId: '1', author: MOCK_USERS[1], content: 'This resonated deeply. I started doing a "one chapter at a time" practice and it completely changed how I retain what I read.', createdAt: '2024-05-10T11:00:00Z' },
+  { id: '2', postId: '1', author: MOCK_USERS[2], content: 'The point about attention being the scarcest resource really stuck with me. I wonder if there is a way to make this a community practice rather than just an individual one.', createdAt: '2024-05-10T14:30:00Z' },
+  { id: '3', postId: '2', author: MOCK_USERS[0], content: 'I wish someone had told me this earlier in my career. The work journal idea is something I am starting today.', createdAt: '2024-05-09T09:00:00Z' },
+  { id: '4', postId: '2', author: MOCK_USERS[2], content: 'Great point about empathy for the audience. That is the piece most technical writers skip, and it shows.', createdAt: '2024-05-09T16:00:00Z' },
+  { id: '5', postId: '3', author: MOCK_USERS[0], content: 'The detail about the heirloom stakes is beautiful. There is so much history in a small plot of soil.', createdAt: '2024-05-06T10:00:00Z' },
+];
+
+// ==================== LOCALSTORAGE PERSISTENCE ====================
+const LS_KEYS = {
+  currentUser: 'wf_currentUser',
+  posts: 'wf_posts',
+  comments: 'wf_comments',
+  users: 'wf_users',
+  credentials: 'wf_credentials',  // stores {email: {passwordHash, userId}}
+};
+
+function lsGet(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch { return fallback; }
+}
+
+function lsSave(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+}
+
+function persistPosts() { lsSave(LS_KEYS.posts, posts); }
+function persistComments() { lsSave(LS_KEYS.comments, comments); }
+function persistUsers() { lsSave(LS_KEYS.users, state.users); }
+function persistCurrentUser() { lsSave(LS_KEYS.currentUser, state.currentUser); }
+function persistCredentials() { lsSave(LS_KEYS.credentials, state.credentials); }
+
+// Hydrate from localStorage
+(function hydrateFromStorage() {
+  const savedPosts = lsGet(LS_KEYS.posts, null);
+  if (savedPosts) posts = savedPosts;
+
+  const savedComments = lsGet(LS_KEYS.comments, null);
+  if (savedComments) comments = savedComments;
+
+  const savedUsers = lsGet(LS_KEYS.users, null);
+  if (savedUsers) {
+    const userMap = {};
+    MOCK_USERS.forEach(u => userMap[u.id] = u);
+    savedUsers.forEach(u => { userMap[u.id] = u; });
+    window._hydratedUsers = Object.values(userMap);
+  }
+
+  const savedCreds = lsGet(LS_KEYS.credentials, null);
+  window._hydratedCreds = savedCreds || { ...DEMO_CREDENTIALS };
+})();
+
+// ==================== STATE ====================
+let state = {
+  currentUser: lsGet(LS_KEYS.currentUser, null),
+  users: window._hydratedUsers || [...MOCK_USERS],
+  credentials: window._hydratedCreds || { ...DEMO_CREDENTIALS },
+  activeCategory: 'all',
+  authMode: 'login',
+  currentPostId: null,
+  editorPostId: null,
+  editorPreview: false,
+  dashTab: 'posts',
+  deleteConfirm: null,
+  deleteAccountConfirm: false,
+  searchQuery: '',
+  adminConfirm: null,
+  adminUserSearch: '',
+  adminPostSearch: '',
+};
+
+// Ensure demo credentials are always present
+Object.keys(DEMO_CREDENTIALS).forEach(email => {
+  if (!state.credentials[email]) state.credentials[email] = DEMO_CREDENTIALS[email];
+});
+persistCredentials();
+
+// ==================== UTILS ====================
+function formatDate(isoString) {
+  const date = new Date(isoString);
+  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+function formatRelativeTime(isoString) {
+  const date = new Date(isoString);
+  const diffDays = Math.floor((Date.now() - date.getTime()) / 86400000);
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+  return formatDate(isoString);
+}
+
+function estimateReadTime(content) {
+  return Math.max(1, Math.ceil(content.split(/\s+/).length / 200));
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderMarkdown(content) {
+  return content.split('\n').map(line => {
+    if (line.startsWith('## ')) return `<h2>${escapeHtml(line.slice(3))}</h2>`;
+    if (line.startsWith('# ')) return `<h2>${escapeHtml(line.slice(2))}</h2>`;
+    if (line.trim() === '') return '<div style="height:0.75rem"></div>';
+    return `<p>${escapeHtml(line)}</p>`;
+  }).join('');
+}
+
+// Build avatar HTML (img if avatarUrl, else initials)
+function avatarHtml(user, cssClass) {
+  if (user && user.avatarUrl) {
+    return `<div class="${cssClass}"><img src="${escapeHtml(user.avatarUrl)}" alt="${escapeHtml(user.displayName)}" /></div>`;
+  }
+  return `<div class="${cssClass}">${escapeHtml((user && user.avatarInitials) || '?')}</div>`;
+}
+
+// ==================== ADMIN ====================
+const ADMIN_USER_IDS = ['1']; // elena@wordflow.com is default admin; expand as needed
+
+function isAdmin(user) {
+  if (!user) return false;
+  return ADMIN_USER_IDS.includes(user.id) || user.role === 'admin';
+}
+
+function renderAdmin() {
+  const el = document.getElementById('adminPanelContent');
+  const u = state.currentUser;
+
+  if (!u) {
+    el.innerHTML = `<div class="no-access"><h2>Access Denied</h2><p>Please sign in first.</p><br><button class="btn-primary" onclick="navigate('auth')">Sign In</button></div>`;
+    return;
+  }
+
+  if (!isAdmin(u)) {
+    el.innerHTML = `<div class="no-access"><h2>🚫 Admin Access Required</h2><p>You do not have permission to view this page. Admin access is restricted to authorised accounts.</p></div>`;
+    return;
+  }
+
+  const totalUsers = state.users.length;
+  const totalPosts = posts.length;
+  const publishedPosts = posts.filter(p => p.status === 'published').length;
+  const draftPosts = posts.filter(p => p.status === 'draft').length;
+  const totalComments = comments.length;
+
+  const adminUserQ = (state.adminUserSearch || '').toLowerCase();
+  const adminPostQ = (state.adminPostSearch || '').toLowerCase();
+
+  const filteredUsers = state.users.filter(usr =>
+    !adminUserQ ||
+    usr.displayName.toLowerCase().includes(adminUserQ) ||
+    usr.email.toLowerCase().includes(adminUserQ) ||
+    usr.username.toLowerCase().includes(adminUserQ)
+  );
+
+  const filteredPosts = posts.filter(p =>
+    !adminPostQ ||
+    p.title.toLowerCase().includes(adminPostQ) ||
+    (p.author && p.author.displayName.toLowerCase().includes(adminPostQ)) ||
+    p.category.toLowerCase().includes(adminPostQ)
+  );
+
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+      <div>
+        <h1 style="font-size:1.75rem;font-family:var(--family-display);font-weight:700">Admin Panel</h1>
+        <div style="font-size:0.8rem;color:var(--color-text-muted);margin-top:0.2rem">Manage users, posts, and platform content</div>
+      </div>
+      <span class="admin-badge">
+        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+        Admin
+      </span>
+      <button class="btn-outline" style="margin-left:auto" onclick="navigate('dashboard')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+        Back to Dashboard
+      </button>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total Users</div>
+        <div class="stat-value">${totalUsers}</div>
+        <div class="stat-sub">${ADMIN_USER_IDS.length} admin${ADMIN_USER_IDS.length !== 1 ? 's' : ''}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Posts</div>
+        <div class="stat-value">${totalPosts}</div>
+        <div class="stat-sub">${publishedPosts} published · ${draftPosts} draft</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Comments</div>
+        <div class="stat-value">${totalComments}</div>
+        <div class="stat-sub">Across all posts</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Publish Rate</div>
+        <div class="stat-value">${totalPosts ? Math.round((publishedPosts / totalPosts) * 100) : 0}%</div>
+        <div class="stat-sub">Of all posts</div>
+      </div>
+    </div>
+
+    <!-- USER MANAGEMENT -->
+    <div class="admin-section">
+      <div class="admin-section-header">
+        <div class="admin-section-title">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Users (${filteredUsers.length}${adminUserQ ? ' filtered' : ''})
+        </div>
+        <input class="admin-search" type="text" placeholder="Search users…" value="${escapeHtml(state.adminUserSearch || '')}" oninput="adminUserSearch(this.value)" />
+      </div>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Email</th>
+            <th>Username</th>
+            <th>Joined</th>
+            <th>Posts</th>
+            <th>Role</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filteredUsers.map(usr => {
+            const postCount = posts.filter(p => p.author && p.author.id === usr.id).length;
+            const commentCount = comments.filter(c => c.author && c.author.id === usr.id).length;
+            const isSelf = state.currentUser && state.currentUser.id === usr.id;
+            const userIsAdmin = isAdmin(usr);
+            const avatarInner = usr.avatarUrl
+              ? `<img src="${escapeHtml(usr.avatarUrl)}" alt="" style="width:100%;height:100%;object-fit:cover" />`
+              : escapeHtml(usr.avatarInitials || '?');
+            const deleteKey = 'user_' + usr.id;
+            const confirmingDelete = state.adminConfirm === deleteKey;
+            return `
+              <tr>
+                <td>
+                  <div class="db-user-row">
+                    <div class="db-avatar-sm">${avatarInner}</div>
+                    <div>
+                      <div style="font-weight:600">${escapeHtml(usr.displayName)}${isSelf ? ' <em style="font-size:0.7rem;color:var(--color-primary);font-style:normal">(you)</em>' : ''}</div>
+                      <div style="font-size:0.72rem;color:var(--color-text-muted)">${postCount} post${postCount !== 1 ? 's' : ''} · ${commentCount} comment${commentCount !== 1 ? 's' : ''}</div>
+                    </div>
+                  </div>
+                </td>
+                <td>${escapeHtml(usr.email)}</td>
+                <td style="color:var(--color-text-muted)">@${escapeHtml(usr.username)}</td>
+                <td>${usr.joinedAt}</td>
+                <td>${postCount}</td>
+                <td>
+                  ${userIsAdmin
+                    ? '<span class="admin-role-badge">Admin</span>'
+                    : '<span class="db-badge db-badge-user">User</span>'}
+                </td>
+                <td>
+                  <div class="admin-actions">
+                    ${!userIsAdmin
+                      ? `<button class="admin-btn" onclick="adminGrantAdmin('${usr.id}')" title="Grant admin role">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+                          Make Admin
+                        </button>`
+                      : (!isSelf ? `<button class="admin-btn" onclick="adminRevokeAdmin('${usr.id}')" title="Revoke admin">
+                          Revoke Admin
+                        </button>` : '')}
+                    ${!isSelf
+                      ? (confirmingDelete
+                        ? `<button class="admin-btn confirm" onclick="adminDeleteUser('${usr.id}')">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                            Confirm Delete
+                           </button>
+                           <button class="admin-btn" onclick="adminCancelConfirm()">Cancel</button>`
+                        : `<button class="admin-btn danger" onclick="adminConfirmAction('${deleteKey}')">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                            Delete User
+                          </button>`)
+                      : '<span style="font-size:0.75rem;color:var(--color-text-muted)">–</span>'}
+                  </div>
+                </td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- POST MANAGEMENT -->
+    <div class="admin-section">
+      <div class="admin-section-header">
+        <div class="admin-section-title">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Posts (${filteredPosts.length}${adminPostQ ? ' filtered' : ''})
+        </div>
+        <input class="admin-search" type="text" placeholder="Search posts…" value="${escapeHtml(state.adminPostSearch || '')}" oninput="adminPostSearch(this.value)" />
+      </div>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Author</th>
+            <th>Category</th>
+            <th>Status</th>
+            <th>Date</th>
+            <th>Comments</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filteredPosts.length === 0
+            ? '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--color-text-muted)">No posts found.</td></tr>'
+            : filteredPosts.map(p => {
+                const postComments = comments.filter(c => c.postId === p.id).length;
+                const deleteKey = 'post_' + p.id;
+                const confirmingDelete = state.adminConfirm === deleteKey;
+                return `
+                  <tr>
+                    <td style="max-width:220px">
+                      <div style="font-weight:600;font-size:0.85rem;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escapeHtml(p.title)}</div>
+                    </td>
+                    <td>${escapeHtml((p.author && p.author.displayName) || 'Unknown')}</td>
+                    <td><span class="card-category">${escapeHtml(p.category)}</span></td>
+                    <td>
+                      <span class="status-badge ${p.status === 'published' ? 'status-published' : 'status-draft'}">${p.status}</span>
+                    </td>
+                    <td style="white-space:nowrap">${formatDate(p.publishedAt)}</td>
+                    <td>${postComments}</td>
+                    <td>
+                      <div class="admin-actions">
+                        <button class="admin-btn" onclick="navigate('post','${p.id}')" title="View post">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                          View
+                        </button>
+                        <button class="admin-btn ${p.status === 'published' ? '' : 'success'}" onclick="adminTogglePostStatus('${p.id}')" title="Toggle publish status">
+                          ${p.status === 'published'
+                            ? '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg> Unpublish'
+                            : '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg> Publish'}
+                        </button>
+                        ${confirmingDelete
+                          ? `<button class="admin-btn confirm" onclick="adminDeletePost('${p.id}')">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                              Confirm
+                             </button>
+                             <button class="admin-btn" onclick="adminCancelConfirm()">Cancel</button>`
+                          : `<button class="admin-btn danger" onclick="adminConfirmAction('${deleteKey}')">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                              Delete
+                            </button>`}
+                      </div>
+                    </td>
+                  </tr>
+                `;
+              }).join('')
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- COMMENT MANAGEMENT -->
+    <div class="admin-section">
+      <div class="admin-section-header">
+        <div class="admin-section-title">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Recent Comments (${comments.length})
+        </div>
+      </div>
+      <table class="admin-table">
+        <thead>
+          <tr><th>Author</th><th>Comment</th><th>Post</th><th>Date</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          ${comments.length === 0
+            ? '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--color-text-muted)">No comments yet.</td></tr>'
+            : comments.slice().reverse().map(c => {
+                const post = posts.find(p => p.id === c.postId);
+                const deleteKey = 'comment_' + c.id;
+                const confirmingDelete = state.adminConfirm === deleteKey;
+                return `
+                  <tr>
+                    <td style="white-space:nowrap">${escapeHtml((c.author && c.author.displayName) || 'Unknown')}</td>
+                    <td style="max-width:280px">
+                      <div style="overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;font-size:0.85rem">${escapeHtml(c.content)}</div>
+                    </td>
+                    <td style="max-width:160px">
+                      <span style="font-size:0.8rem;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;cursor:pointer;color:var(--color-primary)" onclick="navigate('post','${c.postId}')">
+                        ${escapeHtml(post ? post.title : '[deleted post]')}
+                      </span>
+                    </td>
+                    <td style="white-space:nowrap">${formatDate(c.createdAt)}</td>
+                    <td>
+                      <div class="admin-actions">
+                        ${confirmingDelete
+                          ? `<button class="admin-btn confirm" onclick="adminDeleteComment('${c.id}')">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                              Confirm
+                             </button>
+                             <button class="admin-btn" onclick="adminCancelConfirm()">Cancel</button>`
+                          : `<button class="admin-btn danger" onclick="adminConfirmAction('${deleteKey}')">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                              Delete
+                            </button>`}
+                      </div>
+                    </td>
+                  </tr>
+                `;
+              }).join('')
+          }
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function adminUserSearch(val) {
+  state.adminUserSearch = val;
+  renderAdmin();
+}
+
+function adminPostSearch(val) {
+  state.adminPostSearch = val;
+  renderAdmin();
+}
+
+function adminConfirmAction(key) {
+  state.adminConfirm = key;
+  renderAdmin();
+}
+
+function adminCancelConfirm() {
+  state.adminConfirm = null;
+  renderAdmin();
+}
+
+function adminGrantAdmin(userId) {
+  const idx = state.users.findIndex(u => u.id === userId);
+  if (idx !== -1) {
+    state.users[idx] = { ...state.users[idx], role: 'admin' };
+    persistUsers();
+  }
+  state.adminConfirm = null;
+  renderAdmin();
+}
+
+function adminRevokeAdmin(userId) {
+  if (ADMIN_USER_IDS.includes(userId)) {
+    alert('Cannot revoke hardcoded admin accounts.');
+    return;
+  }
+  const idx = state.users.findIndex(u => u.id === userId);
+  if (idx !== -1) {
+    const updated = { ...state.users[idx] };
+    delete updated.role;
+    state.users[idx] = updated;
+    persistUsers();
+  }
+  state.adminConfirm = null;
+  renderAdmin();
+}
+
+function adminDeleteUser(userId) {
+  const usr = state.users.find(u => u.id === userId);
+  if (!usr) return;
+  // Remove their posts and comments
+  posts = posts.filter(p => !p.author || p.author.id !== userId);
+  comments = comments.filter(c => !c.author || c.author.id !== userId);
+  state.users = state.users.filter(u => u.id !== userId);
+  // Remove credentials
+  const credEmail = Object.keys(state.credentials).find(e => state.credentials[e].userId === userId);
+  if (credEmail) delete state.credentials[credEmail];
+  persistPosts();
+  persistComments();
+  persistUsers();
+  persistCredentials();
+  state.adminConfirm = null;
+  renderAdmin();
+}
+
+function adminTogglePostStatus(postId) {
+  const idx = posts.findIndex(p => p.id === postId);
+  if (idx !== -1) {
+    posts[idx] = { ...posts[idx], status: posts[idx].status === 'published' ? 'draft' : 'published', updatedAt: new Date().toISOString() };
+    persistPosts();
+  }
+  state.adminConfirm = null;
+  renderAdmin();
+}
+
+function adminDeletePost(postId) {
+  posts = posts.filter(p => p.id !== postId);
+  comments = comments.filter(c => c.postId !== postId);
+  persistPosts();
+  persistComments();
+  state.adminConfirm = null;
+  renderAdmin();
+}
+
+function adminDeleteComment(commentId) {
+  comments = comments.filter(c => c.id !== commentId);
+  persistComments();
+  state.adminConfirm = null;
+  renderAdmin();
+}
+
+// ==================== NAVIGATION ====================
+function navigate(page, params) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const el = document.getElementById('page-' + page);
+  if (el) el.classList.add('active');
+
+  if (page === 'home') renderHome();
+  else if (page === 'post') renderPost(params);
+  else if (page === 'auth') renderAuth();
+  else if (page === 'editor') renderEditor(params);
+  else if (page === 'dashboard') renderDashboard();
+  else if (page === 'admin') renderAdmin();
+
+  window.scrollTo(0, 0);
+}
+
+// ==================== NAVBAR ====================
+function renderNavbar() {
+  const el = document.getElementById('navbarActions');
+  const u = state.currentUser;
+  if (u) {
+    const chipInner = u.avatarUrl
+      ? `<img src="${escapeHtml(u.avatarUrl)}" alt="${escapeHtml(u.displayName)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />`
+      : escapeHtml(u.avatarInitials);
+    el.innerHTML = `
+      <button class="btn-primary" onclick="navigate('editor')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+        Write
+      </button>
+      <button class="icon-btn" onclick="navigate('dashboard')" title="Dashboard">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+      </button>
+      ${isAdmin(u) ? `<button class="icon-btn" onclick="navigate('admin')" title="Admin Panel" style="color:#92400e">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+      </button>` : ''}
+      <div class="avatar-chip" title="${escapeHtml(u.displayName)}">${chipInner}</div>
+      <button class="icon-btn" onclick="handleLogout()" title="Sign out">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+      </button>
+    `;
+  } else {
+    el.innerHTML = `
+      <button class="btn-outline" onclick="navigate('auth')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Sign in
+      </button>
+      <button class="btn-primary" onclick="navigate('auth')">
+        Get started
+      </button>
+    `;
+  }
+}
+
+// ==================== HOME ====================
+function renderHome() {
+  renderCategories();
+  renderFeed();
+}
+
+function renderCategories() {
+  const el = document.getElementById('categoryList');
+  el.innerHTML = CATEGORIES.map(cat => `
+    <button class="category-btn ${state.activeCategory === cat.slug ? 'active' : ''}" onclick="setCategory('${cat.slug}')">
+      ${escapeHtml(cat.name)}
+    </button>
+  `).join('');
+}
+
+function setCategory(slug) {
+  state.activeCategory = slug;
+  state.searchQuery = '';
+  document.getElementById('searchInput').value = '';
+  renderFeed();
+  renderCategories();
+}
+
+function handleSearch(value) {
+  state.searchQuery = value.trim().toLowerCase();
+  state.activeCategory = 'all';
+  renderFeed();
+  renderCategories();
+}
+
+function getFilteredPosts() {
+  let result = posts.filter(p => p.status === 'published');
+  if (state.searchQuery) {
+    result = result.filter(p =>
+      p.title.toLowerCase().includes(state.searchQuery) ||
+      p.content.toLowerCase().includes(state.searchQuery) ||
+      p.excerpt.toLowerCase().includes(state.searchQuery)
+    );
+  } else if (state.activeCategory !== 'all') {
+    result = result.filter(p => p.category === state.activeCategory);
+  }
+  return result;
+}
+
+function renderFeed() {
+  const filtered = getFilteredPosts();
+  const isAll = state.activeCategory === 'all' && !state.searchQuery;
+  const featured = isAll && filtered[0];
+  const gridPosts = isAll ? filtered.slice(1) : filtered;
+
+  // Hero
+  const heroEl = document.getElementById('hero-section');
+  if (featured) {
+    heroEl.style.display = '';
+    heroEl.innerHTML = `
+      <div class="hero-inner">
+        <div class="hero-label">Featured Post</div>
+        ${renderCardHTML(featured, true)}
+      </div>
+    `;
+  } else {
+    heroEl.style.display = 'none';
+  }
+
+  const catName = CATEGORIES.find(c => c.slug === state.activeCategory)?.name;
+  document.getElementById('feedTitle').textContent = state.searchQuery
+    ? `Search results for "${state.searchQuery}"`
+    : (state.activeCategory === 'all' ? 'Latest Posts' : catName);
+  document.getElementById('feedCount').textContent = `${filtered.length} article${filtered.length !== 1 ? 's' : ''}`;
+
+  const gridEl = document.getElementById('postGrid');
+  if (gridPosts.length === 0) {
+    gridEl.innerHTML = '<div class="empty-state">No posts found.</div>';
+  } else {
+    gridEl.innerHTML = gridPosts.map(p => renderCardHTML(p, false)).join('');
+  }
+}
+
+function renderCardHTML(post, featured) {
+  const avatarInner = post.author && post.author.avatarUrl
+    ? `<img src="${escapeHtml(post.author.avatarUrl)}" alt="${escapeHtml(post.author.displayName)}" />`
+    : escapeHtml((post.author && post.author.avatarInitials) || '?');
+  return `
+    <article class="card ${featured ? 'featured' : ''}" onclick="navigate('post', '${post.id}')">
+      <img class="card-image" src="${escapeHtml(post.featuredImage)}" alt="${escapeHtml(post.title)}" loading="lazy" />
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="card-category">${escapeHtml(post.category)}</span>
+          <span class="meta-divider">·</span>
+          <span>${post.readTime} min read</span>
+        </div>
+        <h2 class="card-title">${escapeHtml(post.title)}</h2>
+        <p class="card-excerpt">${escapeHtml(post.excerpt)}</p>
+        <div class="card-footer">
+          <div class="card-avatar">${avatarInner}</div>
+          <div>
+            <div class="card-author-name">${escapeHtml((post.author && post.author.displayName) || 'Unknown')}</div>
+            <div class="card-date">${formatDate(post.publishedAt)}</div>
+          </div>
+        </div>
+      </div>
+    </article>
+  `;
+}
+
+// ==================== POST DETAIL ====================
+function renderPost(postId) {
+  state.currentPostId = postId;
+  const post = posts.find(p => p.id === postId);
+  const el = document.getElementById('postDetailContent');
+
+  if (!post) {
+    el.innerHTML = `<div style="text-align:center;padding:3rem"><h1>Post not found</h1><br><a style="color:var(--color-primary);cursor:pointer" onclick="navigate('home')">Go back home</a></div>`;
+    return;
+  }
+
+  const postComments = comments.filter(c => c.postId === postId);
+  const u = state.currentUser;
+
+  const authorAvatarInner = post.author && post.author.avatarUrl
+    ? `<img src="${escapeHtml(post.author.avatarUrl)}" alt="${escapeHtml(post.author.displayName)}" />`
+    : escapeHtml((post.author && post.author.avatarInitials) || '?');
+
+  const userAvatarInner = u && u.avatarUrl
+    ? `<img src="${escapeHtml(u.avatarUrl)}" alt="${escapeHtml(u.displayName)}" />`
+    : escapeHtml(u ? u.avatarInitials : '');
+
+  el.innerHTML = `
+    <a class="back-link" onclick="navigate('home')">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+      All Posts
+    </a>
+
+    <article>
+      <header class="article-header">
+        <div class="article-meta">
+          <span class="article-category">${escapeHtml(post.category)}</span>
+          <span class="meta-divider">·</span>
+          <span>${post.readTime} min read</span>
+          <span class="meta-divider">·</span>
+          <span>${formatDate(post.publishedAt)}</span>
+        </div>
+        <h1 class="article-title">${escapeHtml(post.title)}</h1>
+        <p class="article-excerpt">${escapeHtml(post.excerpt)}</p>
+      </header>
+      <img class="article-featured-image" src="${escapeHtml(post.featuredImage)}" alt="${escapeHtml(post.title)}" />
+      <div class="article-body">${renderMarkdown(post.content)}</div>
+    </article>
+
+    <div class="author-bio">
+      <div class="author-bio-avatar">${authorAvatarInner}</div>
+      <div>
+        <span class="author-bio-label">Written by</span>
+        <span class="author-bio-name">${escapeHtml((post.author && post.author.displayName) || 'Unknown')}</span>
+        <p class="author-bio-text">${escapeHtml((post.author && post.author.bio) || '')}</p>
+        <span class="author-bio-joined">Member since ${(post.author && post.author.joinedAt) || ''}</span>
+      </div>
+    </div>
+
+    <section class="comments-section">
+      <h2 class="comments-title">Discussion (${postComments.length})</h2>
+      ${u ? `
+        <div class="comment-input">
+          <div class="comment-input-avatar">${userAvatarInner}</div>
+          <div class="comment-input-body">
+            <textarea class="comment-textarea" id="commentText" placeholder="Share your thoughts... (Ctrl+Enter to submit)" rows="3" onkeydown="handleCommentKey(event)"></textarea>
+            <div class="comment-submit">
+              <button class="btn-primary" onclick="submitComment('${postId}')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                Post Comment
+              </button>
+            </div>
+          </div>
+        </div>
+      ` : `
+        <div class="login-prompt">
+          <a onclick="navigate('auth')">Sign in</a> to join the discussion.
+        </div>
+      `}
+      <div class="comment-list" id="commentList">
+        ${postComments.length === 0
+          ? '<p class="no-comments">Be the first to comment on this post.</p>'
+          : postComments.map(c => {
+              const cAvatarInner = c.author && c.author.avatarUrl
+                ? `<img src="${escapeHtml(c.author.avatarUrl)}" alt="${escapeHtml(c.author.displayName)}" />`
+                : escapeHtml((c.author && c.author.avatarInitials) || '?');
+              return `
+                <div class="comment">
+                  <div class="comment-avatar">${cAvatarInner}</div>
+                  <div class="comment-body">
+                    <div class="comment-header">
+                      <span class="comment-author">${escapeHtml((c.author && c.author.displayName) || 'Unknown')}</span>
+                      <span class="comment-time">${formatRelativeTime(c.createdAt)}</span>
+                    </div>
+                    <p class="comment-text">${escapeHtml(c.content)}</p>
+                  </div>
+                </div>
+              `;
+            }).join('')
+        }
+      </div>
+    </section>
+  `;
+}
+
+function handleCommentKey(e) {
+  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submitComment(state.currentPostId);
+}
+
+function submitComment(postId) {
+  const textarea = document.getElementById('commentText');
+  const text = textarea ? textarea.value.trim() : '';
+  if (!text || !state.currentUser) return;
+  const newComment = {
+    id: String(Date.now()),
+    postId,
+    author: state.currentUser,
+    content: text,
+    createdAt: new Date().toISOString(),
+  };
+  comments.push(newComment);
+  persistComments();
+  renderPost(postId);
+}
+
+// ==================== AUTH ====================
+function renderAuth() {
+  const mode = state.authMode;
+  document.getElementById('authTitle').textContent = mode === 'login' ? 'Welcome back' : 'Create your account';
+  document.getElementById('authSubtitle').textContent = mode === 'login'
+    ? 'Sign in to read, write, and engage with the community.'
+    : 'Join WordFlow and start sharing your ideas.';
+  document.getElementById('loginTab').className = 'auth-tab' + (mode === 'login' ? ' active' : '');
+  document.getElementById('signupTab').className = 'auth-tab' + (mode === 'signup' ? ' active' : '');
+  document.getElementById('signupFields').style.display = mode === 'signup' ? '' : 'none';
+  document.getElementById('authSubmitBtn').textContent = mode === 'login' ? 'Sign In' : 'Create Account';
+  document.getElementById('demoHint').style.display = mode === 'login' ? '' : 'none';
+  document.getElementById('authError').innerHTML = '';
+  document.getElementById('authPassword').placeholder = mode === 'login' ? 'Your password' : 'Create a password';
+}
+
+function switchAuthMode(mode) {
+  state.authMode = mode;
+  renderAuth();
+}
+
+function handleAuth(e) {
+  e.preventDefault();
+  const email = document.getElementById('authEmail').value.trim().toLowerCase();
+  const password = document.getElementById('authPassword').value;
+  const errEl = document.getElementById('authError');
+  errEl.innerHTML = '';
+
+  if (state.authMode === 'login') {
+    const cred = state.credentials[email];
+    if (cred && cred.passwordHash === hashPassword(password)) {
+      const user = state.users.find(u => u.id === cred.userId);
+      state.currentUser = user || null;
+      if (state.currentUser) {
+        persistCurrentUser();
+        renderNavbar();
+        navigate('home');
+      } else {
+        errEl.innerHTML = '<div class="error-banner">Account data not found. It may have been deleted.</div>';
+      }
+    } else {
+      errEl.innerHTML = '<div class="error-banner">Invalid email or password.</div>';
+    }
+  } else {
+    // Sign up
+    if (state.credentials[email]) {
+      errEl.innerHTML = '<div class="error-banner">An account with this email already exists.</div>';
+      return;
+    }
+    const displayName = document.getElementById('displayName').value.trim();
+    const username = document.getElementById('usernameInput').value.trim();
+    if (!displayName || !username) {
+      errEl.innerHTML = '<div class="error-banner">Please fill in all fields.</div>';
+      return;
+    }
+    const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    const newUser = {
+      id: String(Date.now()),
+      username,
+      displayName,
+      email,
+      bio: '',
+      avatarInitials: initials,
+      avatarUrl: null,
+      joinedAt: new Date().toISOString().split('T')[0],
+    };
+    state.credentials[email] = { passwordHash: hashPassword(password), userId: newUser.id };
+    state.users.push(newUser);
+    state.currentUser = newUser;
+    persistCurrentUser();
+    persistUsers();
+    persistCredentials();
+    renderNavbar();
+    navigate('home');
+  }
+}
+
+function handleLogout() {
+  state.currentUser = null;
+  persistCurrentUser();
+  renderNavbar();
+  navigate('home');
+}
+
+// ==================== EDITOR ====================
+function renderEditor(postId) {
+  state.editorPostId = postId || null;
+  state.editorPreview = false;
+
+  document.getElementById('editorLabel').textContent = postId ? 'Editing post' : 'New post';
+  document.getElementById('publishBtn').textContent = postId ? 'Update' : 'Publish';
+
+  const catSelect = document.getElementById('editorCategory');
+  catSelect.innerHTML = CATEGORIES.filter(c => c.id !== 'all').map(c =>
+    `<option value="${c.slug}">${c.name}</option>`
+  ).join('');
+
+  if (postId) {
+    const post = posts.find(p => p.id === postId);
+    if (post) {
+      document.getElementById('editorTitle').value = post.title;
+      document.getElementById('editorContent').value = post.content;
+      document.getElementById('editorImage').value = post.featuredImage;
+      document.getElementById('editorExcerpt').value = post.excerpt;
+      catSelect.value = post.category;
+    }
+  } else {
+    document.getElementById('editorTitle').value = '';
+    document.getElementById('editorContent').value = '';
+    document.getElementById('editorImage').value = '';
+    document.getElementById('editorExcerpt').value = '';
+    catSelect.value = 'culture';
+  }
+
+  document.getElementById('editorPane').style.display = '';
+  document.getElementById('previewPane').style.display = 'none';
+  document.getElementById('previewToggleBtn').classList.remove('active');
+
+  updateEditorBtns();
+}
+
+function onEditorTitleChange() { updateEditorBtns(); }
+function onEditorContentChange() { updateEditorBtns(); }
+
+function updateEditorBtns() {
+  const title = document.getElementById('editorTitle').value.trim();
+  const content = document.getElementById('editorContent').value.trim();
+  document.getElementById('saveDraftBtn').disabled = !title;
+  document.getElementById('publishBtn').disabled = !title || !content;
+}
+
+function toggleEditorPreview() {
+  state.editorPreview = !state.editorPreview;
+  const btn = document.getElementById('previewToggleBtn');
+  const pane = document.getElementById('editorPane');
+  const preview = document.getElementById('previewPane');
+
+  if (state.editorPreview) {
+    btn.classList.add('active');
+    btn.innerHTML = btn.innerHTML.replace('Preview', 'Edit');
+    pane.style.display = 'none';
+    preview.style.display = '';
+    const title = document.getElementById('editorTitle').value || 'Untitled';
+    const content = document.getElementById('editorContent').value;
+    const image = document.getElementById('editorImage').value;
+    preview.innerHTML = `
+      ${image ? `<img class="preview-image" src="${escapeHtml(image)}" alt="Preview" />` : ''}
+      <h1 class="preview-title">${escapeHtml(title)}</h1>
+      <div class="preview-body">${renderMarkdown(content)}</div>
+    `;
+  } else {
+    btn.classList.remove('active');
+    btn.innerHTML = btn.innerHTML.replace('Edit', 'Preview');
+    pane.style.display = '';
+    preview.style.display = 'none';
+  }
+}
+
+function insertFormatting(wrap) {
+  const ta = document.getElementById('editorContent');
+  const start = ta.selectionStart, end = ta.selectionEnd;
+  const selected = ta.value.substring(start, end);
+  ta.value = ta.value.substring(0, start) + wrap + (selected || 'text') + wrap + ta.value.substring(end);
+  ta.focus();
+  updateEditorBtns();
+}
+
+function insertBlock(prefix) {
+  const ta = document.getElementById('editorContent');
+  const lines = ta.value.split('\n');
+  const last = lines[lines.length - 1];
+  ta.value = ta.value + (last === '' ? '' : '\n') + prefix + ' ';
+  ta.focus();
+  updateEditorBtns();
+}
+
+function buildPostData(status) {
+  const u = state.currentUser;
+  const title = document.getElementById('editorTitle').value.trim();
+  const content = document.getElementById('editorContent').value;
+  const featuredImage = document.getElementById('editorImage').value || 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=1200&q=80';
+  const category = document.getElementById('editorCategory').value;
+  const excerpt = document.getElementById('editorExcerpt').value || content.slice(0, 200) + '...';
+  return { title, content, featuredImage, category, excerpt, author: u, status, readTime: estimateReadTime(content) };
+}
+
+function handleSaveDraft() {
+  if (!state.currentUser) { navigate('auth'); return; }
+  const data = buildPostData('draft');
+  const now = new Date().toISOString();
+  if (state.editorPostId) {
+    const idx = posts.findIndex(p => p.id === state.editorPostId);
+    if (idx !== -1) posts[idx] = { ...posts[idx], ...data, updatedAt: now };
+  } else {
+    const newPost = { ...data, id: String(Date.now()), publishedAt: now, updatedAt: now };
+    posts.unshift(newPost);
+    state.editorPostId = newPost.id;
+  }
+  persistPosts();
+  const btn = document.getElementById('saveDraftBtn');
+  btn.textContent = 'Saved!';
+  setTimeout(() => { btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg> Save Draft`; }, 2000);
+}
+
+function handlePublish() {
+  if (!state.currentUser) { navigate('auth'); return; }
+  const data = buildPostData('published');
+  const now = new Date().toISOString();
+  let postId;
+  if (state.editorPostId) {
+    const idx = posts.findIndex(p => p.id === state.editorPostId);
+    if (idx !== -1) { posts[idx] = { ...posts[idx], ...data, updatedAt: now }; postId = state.editorPostId; }
+  } else {
+    const newPost = { ...data, id: String(Date.now()), publishedAt: now, updatedAt: now };
+    posts.unshift(newPost);
+    postId = newPost.id;
+  }
+  persistPosts();
+  navigate('post', postId);
+}
+
+function discardEditor() {
+  navigate('home');
+}
+
+// ==================== DASHBOARD ====================
+function renderDashboard() {
+  const u = state.currentUser;
+  if (!u) {
+    document.getElementById('page-dashboard').innerHTML = `
+      <div class="auth-wall">
+        <h2>Please sign in to access your dashboard</h2>
+        <button class="btn-primary" onclick="navigate('auth')">Sign in</button>
+      </div>
+    `;
+    return;
+  }
+  document.getElementById('dashboardSubtitle').textContent = `Welcome back, ${u.displayName}`;
+  // Show/hide Admin tab
+  const adminTab = document.getElementById('tabAdmin');
+  if (adminTab) adminTab.style.display = isAdmin(u) ? '' : 'none';
+  renderDashTab();
+}
+
+function switchDashTab(tab) {
+  state.dashTab = tab;
+  state.deleteAccountConfirm = false;
+  document.getElementById('tabPosts').className = 'tab-btn' + (tab === 'posts' ? ' active' : '');
+  document.getElementById('tabSettings').className = 'tab-btn' + (tab === 'settings' ? ' active' : '');
+  renderDashTab();
+}
+
+function renderDashTab() {
+  const postsEl = document.getElementById('dashPostsTab');
+  const settingsEl = document.getElementById('dashSettingsTab');
+  const u = state.currentUser;
+  if (!u) return;
+
+  if (state.dashTab === 'posts') {
+    postsEl.style.display = '';
+    settingsEl.style.display = 'none';
+    const myPosts = posts.filter(p => p.author && p.author.id === u.id);
+    document.getElementById('tabPosts').innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+      My Posts (${myPosts.length})
+    `;
+    if (myPosts.length === 0) {
+      postsEl.innerHTML = `
+        <div class="empty-dashboard">
+          <p>You haven't written any posts yet.</p>
+          <button class="empty-action" onclick="navigate('editor')">Write your first post</button>
+        </div>
+      `;
+    } else {
+      postsEl.innerHTML = `<div class="post-list">${myPosts.map(post => `
+        <div class="post-row">
+          <div class="post-row-info">
+            <div class="post-row-meta">
+              <span class="status-badge ${post.status === 'published' ? 'status-published' : 'status-draft'}">${post.status}</span>
+              <span class="post-row-category">${escapeHtml(post.category)}</span>
+            </div>
+            <span class="post-row-title" onclick="navigate('post','${post.id}')">${escapeHtml(post.title)}</span>
+            <span class="post-row-date">${formatDate(post.updatedAt)}</span>
+          </div>
+          <div class="post-actions">
+            <button class="action-btn" onclick="navigate('editor','${post.id}')">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+              Edit
+            </button>
+            <button class="action-btn ${state.deleteConfirm === post.id ? 'danger' : ''}" onclick="handleDeletePost('${post.id}')">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+              ${state.deleteConfirm === post.id ? 'Confirm?' : 'Delete'}
+            </button>
+          </div>
+        </div>
+      `).join('')}</div>`;
+    }
+  } else {
+    postsEl.style.display = 'none';
+    settingsEl.style.display = '';
+
+    const avatarInner = u.avatarUrl
+      ? `<img src="${escapeHtml(u.avatarUrl)}" alt="${escapeHtml(u.displayName)}" />`
+      : escapeHtml(u.avatarInitials);
+
+    const removeBtn = u.avatarUrl
+      ? `<button class="avatar-remove-btn" onclick="handleRemoveAvatar()">
+           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+           Remove Photo
+         </button>`
+      : '';
+
+    const deleteConfirmHtml = state.deleteAccountConfirm
+      ? `<div class="error-banner" style="margin-top:0.75rem">
+           <strong>Are you sure?</strong> This will permanently delete your account and all your posts. This cannot be undone.
+           <div style="display:flex;gap:0.5rem;margin-top:0.75rem">
+             <button class="delete-account-btn" style="padding:0.35rem 0.85rem;font-size:0.8rem" onclick="confirmDeleteAccount()">Yes, delete my account</button>
+             <button class="logout-btn" style="padding:0.35rem 0.85rem;font-size:0.8rem" onclick="cancelDeleteAccount()">Cancel</button>
+           </div>
+         </div>`
+      : `<button class="delete-account-btn" onclick="handleDeleteAccount()">Delete Account</button>`;
+
+    settingsEl.innerHTML = `
+      <div class="settings-card">
+        <h2 class="settings-title">Profile</h2>
+        <div class="avatar-row">
+          <div class="big-avatar">${avatarInner}</div>
+          <div class="avatar-controls">
+            <button class="avatar-upload-btn" onclick="document.getElementById('avatarFileInput').click()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+              ${u.avatarUrl ? 'Change Photo' : 'Upload Photo'}
+            </button>
+            ${removeBtn}
+            <div style="font-size:0.72rem;color:var(--color-text-muted)">JPG, PNG, GIF &mdash; max 2 MB</div>
+          </div>
+        </div>
+        <div style="margin-bottom:0.5rem">
+          <div class="settings-username">@${escapeHtml(u.username)}</div>
+          <div class="settings-email">${escapeHtml(u.email)}</div>
+          <div class="settings-member">Member since ${u.joinedAt}</div>
+        </div>
+        <div class="form-field" style="margin-top:1rem">
+          <label class="form-label">Display Name</label>
+          <input class="form-input" id="profileDisplayName" type="text" value="${escapeHtml(u.displayName)}" />
+        </div>
+        <div class="form-field">
+          <label class="form-label">Bio</label>
+          <textarea class="form-textarea" id="profileBio" rows="3" placeholder="Tell readers about yourself...">${escapeHtml(u.bio)}</textarea>
+        </div>
+        <div id="profileMsg"></div>
+        <div class="settings-actions">
+          <button class="save-btn" onclick="handleSaveProfile()">Save Changes</button>
+          <button class="logout-btn" onclick="handleLogout()">Sign Out</button>
+        </div>
+
+        <div class="danger-zone">
+          <div class="danger-zone-title">Danger Zone</div>
+          <div class="danger-zone-text">Deleting your account will permanently remove all your data, posts, and comments. This action cannot be reversed.</div>
+          ${deleteConfirmHtml}
+        </div>
+      </div>
+    `;
+  }
+}
+
+function handleDeletePost(id) {
+  if (state.deleteConfirm === id) {
+    posts = posts.filter(p => p.id !== id);
+    persistPosts();
+    state.deleteConfirm = null;
+    renderDashTab();
+  } else {
+    state.deleteConfirm = id;
+    renderDashTab();
+    setTimeout(() => {
+      if (state.deleteConfirm === id) { state.deleteConfirm = null; renderDashTab(); }
+    }, 3000);
+  }
+}
+
+function handleSaveProfile() {
+  const displayName = document.getElementById('profileDisplayName').value.trim();
+  const bio = document.getElementById('profileBio').value.trim();
+  if (!displayName) return;
+  state.currentUser = { ...state.currentUser, displayName, bio };
+  const idx = state.users.findIndex(u => u.id === state.currentUser.id);
+  if (idx !== -1) state.users[idx] = state.currentUser;
+  persistCurrentUser();
+  persistUsers();
+  // Update author references in existing posts
+  posts = posts.map(p => p.author && p.author.id === state.currentUser.id ? { ...p, author: state.currentUser } : p);
+  // Update comment author references
+  comments = comments.map(c => c.author && c.author.id === state.currentUser.id ? { ...c, author: state.currentUser } : c);
+  persistPosts();
+  persistComments();
+  renderNavbar();
+  const msgEl = document.getElementById('profileMsg');
+  if (msgEl) { msgEl.innerHTML = '<div class="success-banner">Profile saved successfully!</div>'; setTimeout(() => { if(msgEl) msgEl.innerHTML = ''; }, 2500); }
+  renderDashTab();
+}
+
+// ==================== PROFILE PICTURE ====================
+function handleAvatarFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) {
+    alert('Image must be under 2 MB.');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const dataUrl = e.target.result;
+    state.currentUser = { ...state.currentUser, avatarUrl: dataUrl };
+    const idx = state.users.findIndex(u => u.id === state.currentUser.id);
+    if (idx !== -1) state.users[idx] = state.currentUser;
+    // Propagate to posts and comments
+    posts = posts.map(p => p.author && p.author.id === state.currentUser.id ? { ...p, author: state.currentUser } : p);
+    comments = comments.map(c => c.author && c.author.id === state.currentUser.id ? { ...c, author: state.currentUser } : c);
+    persistCurrentUser();
+    persistUsers();
+    persistPosts();
+    persistComments();
+    renderNavbar();
+    renderDashTab();
+  };
+  reader.readAsDataURL(file);
+  // Reset file input so same file can be picked again
+  event.target.value = '';
+}
+
+function handleRemoveAvatar() {
+  state.currentUser = { ...state.currentUser, avatarUrl: null };
+  const idx = state.users.findIndex(u => u.id === state.currentUser.id);
+  if (idx !== -1) state.users[idx] = state.currentUser;
+  posts = posts.map(p => p.author && p.author.id === state.currentUser.id ? { ...p, author: state.currentUser } : p);
+  comments = comments.map(c => c.author && c.author.id === state.currentUser.id ? { ...c, author: state.currentUser } : c);
+  persistCurrentUser();
+  persistUsers();
+  persistPosts();
+  persistComments();
+  renderNavbar();
+  renderDashTab();
+}
+
+// ==================== DELETE ACCOUNT ====================
+function handleDeleteAccount() {
+  state.deleteAccountConfirm = true;
+  renderDashTab();
+}
+
+function cancelDeleteAccount() {
+  state.deleteAccountConfirm = false;
+  renderDashTab();
+}
+
+function confirmDeleteAccount() {
+  const u = state.currentUser;
+  if (!u) return;
+  // Remove all user's posts
+  posts = posts.filter(p => !p.author || p.author.id !== u.id);
+  // Remove all user's comments
+  comments = comments.filter(c => !c.author || c.author.id !== u.id);
+  // Remove from users list
+  state.users = state.users.filter(usr => usr.id !== u.id);
+  // Remove credentials
+  const credEmail = Object.keys(state.credentials).find(email => state.credentials[email].userId === u.id);
+  if (credEmail) delete state.credentials[credEmail];
+  // Clear session
+  state.currentUser = null;
+  state.deleteAccountConfirm = false;
+  persistPosts();
+  persistComments();
+  persistUsers();
+  persistCredentials();
+  persistCurrentUser();
+  renderNavbar();
+  navigate('home');
+}
+
+// ==================== USERS DATABASE MODAL ====================
+function openUsersDb() {
+  if (!state.currentUser) { navigate('auth'); return; }
+  renderUsersDb();
+  document.getElementById('usersDbModal').style.display = 'flex';
+}
+
+function closeUsersDb() {
+  document.getElementById('usersDbModal').style.display = 'none';
+}
+
+function closeUsersDbOnBackdrop(e) {
+  if (e.target === document.getElementById('usersDbModal')) closeUsersDb();
+}
+
+function renderUsersDb() {
+  const el = document.getElementById('usersDbContent');
+  const allUsers = state.users;
+  const isDemoUser = (id) => ['1','2','3'].includes(id);
+
+  if (allUsers.length === 0) {
+    el.innerHTML = '<p style="color:var(--color-text-muted);font-size:0.875rem">No users registered yet.</p>';
+    return;
+  }
+
+  el.innerHTML = `
+    <table class="db-table">
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Email</th>
+          <th>Username</th>
+          <th>Joined</th>
+          <th>Posts</th>
+          <th>Type</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${allUsers.map(u => {
+          const postCount = posts.filter(p => p.author && p.author.id === u.id).length;
+          const avatarInner = u.avatarUrl
+            ? `<img src="${escapeHtml(u.avatarUrl)}" alt="${escapeHtml(u.displayName)}" />`
+            : escapeHtml(u.avatarInitials);
+          const isCurrentUser = state.currentUser && state.currentUser.id === u.id;
+          return `
+            <tr style="${isCurrentUser ? 'background:var(--color-primary-light)' : ''}">
+              <td>
+                <div class="db-user-row">
+                  <div class="db-avatar-sm">${avatarInner}</div>
+                  <span>${escapeHtml(u.displayName)}${isCurrentUser ? ' <em style="font-size:0.7rem;color:var(--color-primary)">(you)</em>' : ''}</span>
+                </div>
+              </td>
+              <td>${escapeHtml(u.email)}</td>
+              <td>@${escapeHtml(u.username)}</td>
+              <td>${u.joinedAt}</td>
+              <td>${postCount}</td>
+              <td><span class="db-badge ${isDemoUser(u.id) ? 'db-badge-demo' : 'db-badge-user'}">${isDemoUser(u.id) ? 'Demo' : 'User'}</span></td>
+            </tr>
+          `;
+        }).join('')}
+      </tbody>
+    </table>
+    <p style="margin-top:0.75rem;font-size:0.75rem;color:var(--color-text-muted)">
+      Total: ${allUsers.length} account${allUsers.length !== 1 ? 's' : ''} &bull; Passwords stored as hashed values (not plain text)
+    </p>
+  `;
+}
+
+// ==================== INIT ====================
+renderNavbar();
+renderHome();
+</script>
+</body>
+</html>
