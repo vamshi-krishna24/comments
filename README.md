@@ -1,4 +1,4 @@
-WordFlow
+#WordFlow
 
 WordFlow is a modern single-file blogging platform demo built entirely with HTML, CSS, and JavaScript — no frameworks, no backend, no setup headaches. Everything runs directly in the browser with persistent storage powered by localStorage.
 
